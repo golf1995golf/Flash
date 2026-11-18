@@ -9,11 +9,10 @@ Optional environment variables:
   TRACKING_NO          default: TH30189CGRV45C
   INTERVAL_SECONDS     default: 600 (10 min)
   STATE_FILE           default: state.json next to this script
-
-Usage:
-  python flash_tracker.py          # loop until delivered
-  python flash_tracker.py --once   # check once
-  python flash_tracker.py --test   # send a test Telegram message
+การใช้งาน:
+  python flash_tracker.py # วนซ้ำจนกว่าจะส่งมอบ
+  python flash_tracker.py --once # ตรวจสอบหนึ่งครั้ง
+  python flash_tracker.py --test # ส่งข้อความทดสอบโทรเลข
 """
 import json
 import os
@@ -25,8 +24,8 @@ import urllib.request
 from pathlib import Path
 
 TRACKING_NO = os.getenv("TRACKING_NO", "TH30189CGRV45C").strip()
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8253228783:AAFHcjWhw1s3Ttu490Ooi10nZ-LFmQrRGjM").strip()
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "7928002301").strip()
 INTERVAL = int(os.getenv("INTERVAL_SECONDS", "600"))
 STATE_FILE = Path(
     os.getenv("STATE_FILE", str(Path(__file__).with_name("state.json")))
@@ -192,6 +191,15 @@ def check_once() -> bool:
     return delivered
 
 
+def countdown_sleep(seconds: int) -> None:
+    """Sleep while printing a live countdown to the console."""
+    for remaining in range(seconds, 0, -1):
+        mins, secs = divmod(remaining, 60)
+        print(f"\r[wait] เช็คครั้งถัดไปใน {mins:02d}:{secs:02d} ", end="", flush=True)
+        time.sleep(1)
+    print("\r" + " " * 40 + "\r", end="", flush=True)
+
+
 def validate_config() -> None:
     missing = []
     if not BOT_TOKEN:
@@ -220,7 +228,7 @@ def main() -> None:
         while True:
             if check_once():
                 break
-            time.sleep(INTERVAL)
+            countdown_sleep(INTERVAL)
     except ValueError as exc:
         # Configuration messages contain variable names, never secret values.
         print(f"[error] {exc}", file=sys.stderr)
